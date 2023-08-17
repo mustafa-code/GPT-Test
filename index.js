@@ -29,11 +29,13 @@ document.addEventListener('submit', (e) => {
     fetchReply()
 })
 async function fetchReply(){
+    var x = document.getElementById("thinging");
+    x.style.display = "block";
     const response = await openai.createChatCompletion({
         model: 'gpt-3.5-turbo',
         messages: conversationArr,
     })
-    console.log(response)
+    x.style.display = "none";
     conversationArr.push(response.data.choices[0].message)
     renderTypewriterText(response.data.choices[0].message.content)
 }
