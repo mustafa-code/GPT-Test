@@ -1,56 +1,107 @@
-import { process } from '/env.js'
-import { Configuration, OpenAIApi } from 'openai'
+import { process } from "/env.js";
 
-const configuration = new Configuration({
-    apiKey: process["env"]["OPENAI_API_KEY"]
-})
+const apiUrl = process["env"]["API_URL"];
+var chat_id = false
 
-const openai = new OpenAIApi(configuration)
-const conversationArr = [
-    {
-        role: 'system',
-        content: 'You are a useful assistant.'
+const chatbotConversation = document.getElementById("chatbot-conversation");
+document.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const userInput = document.getElementById("user-input");
+  const newSpeechBubble = document.createElement("div");
+  newSpeechBubble.classList.add("speech", "speech-human");
+  chatbotConversation.appendChild(newSpeechBubble);
+  var question = userInput.value;
+  userInput.value = "";
+  newSpeechBubble.textContent = question;
+  chatbotConversation.scrollTop = chatbotConversation.scrollHeight;
+
+  fetchReply(question);
+});
+// document.addEventListener("submit", (e) => {
+//   e.preventDefault();
+// // apiUrl+"report_answer"
+// });
+
+async function fetchReply(question) {
+  var thinging = document.getElementById("thinging");
+  thinging.style.display = "block";
+  const postData = {
+    question: question,
+  };
+  if(chat_id){
+    postData['chat_id'] = chat_id
+  }
+  fetch(apiUrl+"prompt_route", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(postData),
+  })
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error(`Network response was not ok: ${response.status}`);
     }
-]
-const chatbotConversation = document.getElementById('chatbot-conversation')
-document.addEventListener('submit', (e) => {
-    e.preventDefault()
-    const userInput = document.getElementById('user-input')
-    const newSpeechBubble = document.createElement('div')
-    newSpeechBubble.classList.add('speech', 'speech-human')
-    chatbotConversation.appendChild(newSpeechBubble)
-    newSpeechBubble.textContent = userInput.value
-    conversationArr.push({
-        role: 'user',
-        content: userInput.value
-    })
-    userInput.value = ''
-    chatbotConversation.scrollTop = chatbotConversation.scrollHeight
-    fetchReply()
-})
-async function fetchReply(){
-    var thinging = document.getElementById("thinging");
-    thinging.style.display = "block";
-    const response = await openai.createChatCompletion({
-        model: 'gpt-3.5-turbo',
-        messages: conversationArr,
-    })
+    return response.json();
+  })
+  .then((data) => {
+    chat_id = data.chat_id
     thinging.style.display = "none";
-    conversationArr.push(response.data.choices[0].message)
-    renderTypewriterText(response.data.choices[0].message.content)
+    renderTypewriterText(data);
+  })
+  .catch((error) => {
+    console.error("There was a problem with the fetch operation:", error);
+  });
+
 }
-function renderTypewriterText(text) {
-    const newSpeechBubble = document.createElement('div')
-    newSpeechBubble.classList.add('speech', 'speech-ai', 'blinking-cursor')
-    chatbotConversation.appendChild(newSpeechBubble)
-    let i = 0
-    const interval = setInterval(() => {
-        newSpeechBubble.textContent += text.slice(i-1, i)
-        if (text.length === i) {
-            clearInterval(interval)
-            newSpeechBubble.classList.remove('blinking-cursor')
-        }
-        i++
-        chatbotConversation.scrollTop = chatbotConversation.scrollHeight
-    }, 50)
+function renderTypewriterText(data) {
+  var text = data.response.content.replace(/\n/g, "<br />");
+  const newSpeechBubble = document.createElement("div");
+  newSpeechBubble.classList.add("speech", "speech-ai", "blinking-cursor");
+  chatbotConversation.appendChild(newSpeechBubble);
+  let i = 0;
+  const interval = setInterval(() => {
+    newSpeechBubble.textContent += text.slice(i - 1, i);
+    if (text.length === i) {
+      clearInterval(interval);
+      newSpeechBubble.classList.remove("blinking-cursor");
+      const reportA = document.createElement("a");
+      reportA.textContent = "Report";
+      reportA.setAttribute("href", "javascript:;");
+      reportA.setAttribute("message-id", data.message_id);
+
+      reportA.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        fetch(apiUrl+"report_answer", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: chat_id,
+            message_id: data.message_id,
+          }),
+        })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.status}`);
+          }
+          console.log("response.json()", response.json());
+          return response.json();
+        })
+        .catch((error) => {
+          console.error("There was a problem with the fetch operation:", error);
+        });
+      
+      });
+
+      chatbotConversation.appendChild(reportA);
+    }
+    i++;
+    chatbotConversation.scrollTop = chatbotConversation.scrollHeight;
+  }, 30);
+
+
 }
+
