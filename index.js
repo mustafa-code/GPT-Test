@@ -4,7 +4,8 @@ const apiUrl = process["env"]["API_URL"];
 var chat_id = false
 
 const chatbotConversation = document.getElementById("chatbot-conversation");
-document.addEventListener("submit", (e) => {
+const form = document.getElementById("form");
+form.addEventListener("submit", (e) => {
   e.preventDefault();
   const userInput = document.getElementById("user-input");
   const newSpeechBubble = document.createElement("div");
@@ -17,10 +18,41 @@ document.addEventListener("submit", (e) => {
 
   fetchReply(question);
 });
-// document.addEventListener("submit", (e) => {
-//   e.preventDefault();
-// // apiUrl+"report_answer"
-// });
+
+const form2 = document.getElementById("form2");
+form2.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const userInput = document.getElementById("url_page");
+  var url_page = userInput.value;
+  userInput.value = "";
+
+  const btn = document.getElementById("submit-btn2");
+  btn.textContent = "Processing..."
+
+  fetch(apiUrl+"load_url", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      url: url_page,
+    }),
+  })
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error(`Network response was not ok: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then((data) => {
+    btn.textContent = "Process"
+    alert(data.message)
+  })
+  .catch((error) => {
+    console.error("There was a problem with the fetch operation:", error);
+  });
+
+});
 
 async function fetchReply(question) {
   var thinging = document.getElementById("thinging");
@@ -40,6 +72,8 @@ async function fetchReply(question) {
   })
   .then((response) => {
     if (!response.ok) {
+      thinging.style.display = "none";
+      alert("There an exception occur in the API, please try again!");
       throw new Error(`Network response was not ok: ${response.status}`);
     }
     return response.json();
@@ -55,53 +89,46 @@ async function fetchReply(question) {
 
 }
 function renderTypewriterText(data) {
-  var text = data.response.content.replace(/\n/g, "<br />");
+  var text = data.response.content;
   const newSpeechBubble = document.createElement("div");
   newSpeechBubble.classList.add("speech", "speech-ai", "blinking-cursor");
   chatbotConversation.appendChild(newSpeechBubble);
-  let i = 0;
-  const interval = setInterval(() => {
-    newSpeechBubble.textContent += text.slice(i - 1, i);
-    if (text.length === i) {
-      clearInterval(interval);
-      newSpeechBubble.classList.remove("blinking-cursor");
-      const reportA = document.createElement("a");
-      reportA.textContent = "Report";
-      reportA.setAttribute("href", "javascript:;");
-      reportA.setAttribute("message-id", data.message_id);
+  newSpeechBubble.textContent += text;
 
-      reportA.addEventListener("click", (e) => {
-        e.preventDefault();
+  newSpeechBubble.classList.remove("blinking-cursor");
+  const reportA = document.createElement("a");
+  reportA.textContent = "Report";
+  reportA.setAttribute("href", "javascript:;");
+  reportA.setAttribute("message-id", data.message_id);
 
-        fetch(apiUrl+"report_answer", {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chat_id: chat_id,
-            message_id: data.message_id,
-          }),
-        })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Network response was not ok: ${response.status}`);
-          }
-          console.log("response.json()", response.json());
-          return response.json();
-        })
-        .catch((error) => {
-          console.error("There was a problem with the fetch operation:", error);
-        });
-      
-      });
+  reportA.addEventListener("click", (e) => {
+    e.preventDefault();
 
-      chatbotConversation.appendChild(reportA);
-    }
-    i++;
-    chatbotConversation.scrollTop = chatbotConversation.scrollHeight;
-  }, 30);
+    fetch(apiUrl+"report_answer", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chat_id,
+        message_id: data.message_id,
+      }),
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.status}`);
+      }
+      console.log("response.json()", response.json());
+      return response.json();
+    })
+    .catch((error) => {
+      console.error("There was a problem with the fetch operation:", error);
+    });
+  
+  });
 
+  chatbotConversation.appendChild(reportA);
 
+  chatbotConversation.scrollTop = chatbotConversation.scrollHeight;
 }
 

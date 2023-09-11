@@ -10,7 +10,7 @@
 	</head>
 
 	<body>
-		<main>
+		<main style="display: flex;flex-direction: row-reverse;justify-content: space-around;">
 			<section class="chatbot-container">
 				<div class="chatbot-header">
 					<img src="images/owl-logo.png" class="logo">
@@ -37,6 +37,16 @@
 					font-size: 8px;
 					display: none;
 				">Thinging...</span>
+			</section>
+			<section class="chatbot-container" style="min-height: auto;color: white;">
+				<h3>Add a URL to Dataset</h3>
+				<p style="color: lightgrey;">Each url added, will be saved permanently!</p>
+				<form id="form2" class="chatbot-input-container">
+					<input name="url_page" type="text" placeholder="Write URL!" id="url_page" required>
+					<button id="submit-btn2" class="submit-btn" style="color: white;">
+						Process
+					</button>
+				</form>
 			</section>
 		</main>
 		<script src="index.js" type="module"></script>
